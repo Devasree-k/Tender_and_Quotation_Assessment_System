@@ -1,2 +1,13 @@
 fastapi
 uvicorn[standard]
+sqlalchemy
+asyncpg
+pydantic-settings
+alembic 
+pydantic>=2.0
+PyJWT
+pwdlib[argon2]
+python-multipart
+sqlalchemy[asyncio]
+alembic
+
