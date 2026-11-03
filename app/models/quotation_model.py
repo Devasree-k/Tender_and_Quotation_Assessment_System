@@ -1,15 +1,15 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import (
-    Integer,
-    String,
-    Text,
-    Numeric,
+    CheckConstraint,
     DateTime,
     ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
     UniqueConstraint,
-    CheckConstraint,
-    func
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -83,20 +83,20 @@ class Quotation(Base):
 
     # Relationships
 
-    tender: Mapped["Tender"] = relationship(
+    tender: Mapped[Tender] = relationship(
         back_populates="quotations"
     )
 
-    vendor: Mapped["Vendor"] = relationship(
+    vendor: Mapped[Vendor] = relationship(
         back_populates="quotations"
     )
 
-    evaluation: Mapped["Evaluation | None"] = relationship(
+    evaluation: Mapped[Evaluation | None] = relationship(
         back_populates="quotation",
         cascade="all, delete-orphan"
     )
 
-    sanction: Mapped["Sanction | None"] = relationship(
+    sanction: Mapped[Sanction | None] = relationship(
         back_populates="quotation",
         cascade="all, delete-orphan"
     )

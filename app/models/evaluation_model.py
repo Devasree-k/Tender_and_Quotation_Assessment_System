@@ -1,15 +1,15 @@
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import (
-    Integer,
-    String,
-    Text,
-    Numeric,
+    CheckConstraint,
     DateTime,
     ForeignKey,
-    CheckConstraint,
-    func
+    Integer,
+    Numeric,
+    String,
+    Text,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -107,10 +107,10 @@ class Evaluation(Base):
 
     # Relationships
 
-    quotation: Mapped["Quotation"] = relationship(
+    quotation: Mapped[Quotation] = relationship(
         back_populates="evaluation"
     )
 
-    evaluator: Mapped["User"] = relationship(
+    evaluator: Mapped[User] = relationship(
         back_populates="evaluations"
     )

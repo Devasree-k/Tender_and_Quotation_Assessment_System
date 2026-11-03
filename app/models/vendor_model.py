@@ -1,18 +1,19 @@
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
     Integer,
     String,
     Text,
-    ForeignKey,
-    DateTime,
-    CheckConstraint,
-    func
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
+
 
 class Vendor(Base):
 
@@ -95,11 +96,11 @@ class Vendor(Base):
 
     # Relationships
 
-    user: Mapped["User"] = relationship(
+    user: Mapped[User] = relationship(
         back_populates="vendor"
     )
 
-    quotations: Mapped[list["Quotation"]] = relationship(
+    quotations: Mapped[list[Quotation]] = relationship(
         back_populates="vendor"
     )
 

@@ -1,8 +1,14 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 from sqlalchemy.engine import URL
 
 load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+# Database configuration
 DATABASE_URL = URL.create(
     "postgresql+asyncpg",
     username=os.getenv("DB_USER"),
@@ -14,6 +20,12 @@ DATABASE_URL = URL.create(
 
 JWT_SECRET_KEY=os.getenv("JWT_SECRET_KEY")
 JWT_ALGORITHM=os.getenv("JWT_ALGORITHM")
-ACCESS_TOKEN_EXPIRATION_TIME=os.getenv("ACCESS_TOKEN_EXPIRATION_TIME")
-REFRESH_TOKEN_EXPIRE_DAYS=os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")
+ACCESS_TOKEN_EXPIRATION_TIME= int(os.getenv("ACCESS_TOKEN_EXPIRATION_TIME", "30"))
+REFRESH_TOKEN_EXPIRE_DAYS=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS","7"))
+
+
+# Logging configuration
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_DIR = BASE_DIR / os.getenv("LOG_DIR", "logs")
+
 

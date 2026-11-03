@@ -1,14 +1,14 @@
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import (
-    Integer,
-    Text,
-    Numeric,
+    CheckConstraint,
     DateTime,
     ForeignKey,
-    CheckConstraint,
-    func
+    Integer,
+    Numeric,
+    Text,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -64,10 +64,10 @@ class Sanction(Base):
 
     # Relationships
 
-    quotation: Mapped["Quotation"] = relationship(
+    quotation: Mapped[Quotation] = relationship(
         back_populates="sanction"
     )
 
-    approver: Mapped["User"] = relationship(
+    approver: Mapped[User] = relationship(
         back_populates="sanctions"
     )
