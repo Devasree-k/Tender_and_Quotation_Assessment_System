@@ -21,40 +21,25 @@ logger = logging.getLogger(__name__)
 class TenderService:
 
     ALLOWED_STATUS_TRANSITIONS: dict[str, set[str]] = {
-        "open": {"closed", "cancelled","under_evaluation"},
+        "open": {"closed", "cancelled"},
         "closed": {"under_evaluation", "cancelled"},
         "under_evaluation": {"assigned", "closed", "cancelled"},
         "assigned": set(),
         "cancelled": set(),
     }
 
-    def __init__(
-        self,
-        repository: TenderRepositoryInterface,
-    ) -> None:
+    def __init__(self,repository: TenderRepositoryInterface,) -> None:
         self.repository = repository
 
-    def validate_dates(
-        self,
-        publish_date: date,
-        end_date: date,
-    ) -> None:
+    def validate_dates(self, publish_date: date, end_date: date) -> None:
 
         if end_date <= publish_date:
-            raise TenderBusinessRuleException(
-                "Tender end date must be after publish date."
-            )
+            raise TenderBusinessRuleException("Tender end date must be after publish date.")
 
-    async def create_tender(
-        self,
-        data: TenderCreate,
-        admin_id: int,
-    ) -> Tender:
+    async def create_tender(self, data: TenderCreate, admin_id: int,) -> Tender:
 
         tender_data: dict[str, Any] = data.model_dump()
-        publish_date: date = (
-            tender_data.get("publish_date") or date.today()
-        )
+        publish_date: date = (tender_data.get("publish_date") or date.today())
         end_date: date = tender_data["end_date"]
         self.validate_dates(publish_date, end_date)
 
@@ -80,10 +65,7 @@ class TenderService:
         except IntegrityError as error:
             await self.repository.rollback()
 
-            logger.exception(
-                "Database constraint error while creating tender. admin_id=%s",
-                admin_id,
-            )
+            logger.exception("Database constraint error while creating tender. admin_id=%s",admin_id,)
 
             raise TenderBusinessRuleException(
                 "Unable to create tender due to a database constraint."
@@ -111,11 +93,7 @@ class TenderService:
                 "Tender not found. tender_id=%s",
                 tender_id,
             )
-
-            raise TenderNotFoundException(
-                f"Tender with ID {tender_id} not found."
-            )
-
+            raise TenderNotFoundException( f"Tender with ID {tender_id} not found.")
         return tender
 
     async def get_tenders(
@@ -238,11 +216,11 @@ class TenderService:
                 f"Cannot change tender status from '{current_status}' to '{new_status}'."
             )
 
-        # if new_status == "under_evaluation":
-        #     if tender.end_date >= date.today():
-        #         raise TenderBusinessRuleException(
-        #             "Tender cannot enter evaluation before its closing date has passed."
-        #         )
+        if new_status == "under_evaluation":
+            if tender.end_date >= date.today():
+                raise TenderBusinessRuleException(
+                    "Tender cannot enter evaluation before its closing date has passed."
+                )
 
         try:
             updated_tender = await self.repository.update(
@@ -287,3 +265,38 @@ class TenderService:
 
 
         
+    async def delete_tender(self, tender_id: int) -> Tender:
+
+        tender = await self.repository.get_by_id(tender_id)
+
+        if tender is None:
+            raise TenderNotFoundException(
+                f"Tender with ID {tender_id} not found."
+            )
+
+        if tender.status not in ["open", "closed"]:
+            raise TenderBusinessRuleException("Only open or closed tenders can be cancelled.")
+
+        try:
+
+            tender.status = "cancelled"
+            await self.repository.commit()
+            logger.info(
+                "Tender cancelled successfully. tender_id=%s",
+                tender_id,
+            )
+            return tender
+
+        except SQLAlchemyError as error:
+            await self.repository.rollback()
+            logger.exception(
+                "Database error while cancelling tender_id=%s",
+                tender_id,
+            )
+            raise TenderBusinessRuleException(
+                "Unable to cancel tender due to a database error."
+            ) from error
+
+
+
+            

@@ -4,6 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.evaluation_model import Evaluation
 from app.repositories.interfaces.evaluation_repository_interface import EvaluationRepositoryInterface
 
+
+from sqlalchemy.orm import selectinload
+from app.models.quotation_model import Quotation
+
+
 class EvaluationRepository(EvaluationRepositoryInterface):
     def __init__(self, db:AsyncSession):
         self.db = db
@@ -42,3 +47,34 @@ class EvaluationRepository(EvaluationRepositoryInterface):
 
         return list(result.scalars().all())
 
+
+    # to retrieve approved evaluation for specific tender 
+
+    async def get_approved_by_tender(
+        self,
+        tender_id: int,
+        skip: int,
+        limit: int
+    ) -> list[Evaluation]:
+
+        query = (
+            select(Evaluation)
+            .join(Evaluation.quotation)
+            .where(
+                Quotation.tender_id == tender_id,
+                Evaluation.decision == "approved"
+            )
+            .options(
+                selectinload(Evaluation.quotation)
+            )
+            .order_by(
+                Evaluation.total_score.desc(),
+                Evaluation.evaluation_id.asc()
+            )
+            .offset(skip)
+            .limit(limit)
+        )
+
+        result = await self.db.execute(query)
+
+        return list(result.scalars().all())

@@ -13,6 +13,15 @@ from app.schemas.tender_schema import (
 )
 from app.services.tender_service import TenderService
 
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+
+from app.api.dependencies.database import get_db
+from app.models.user_model import User
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -130,3 +139,40 @@ async def change_tender_status(
         data.status,
     )
 
+
+
+@router.patch(
+    "/close-expired",
+    dependencies=[Depends(require_roles("admin"))],
+)
+async def close_expired_tenders(
+    db: AsyncSession = Depends(get_db),
+    current_admin: User = Depends(require_roles("admin")),
+) -> dict[str, str]:
+
+    await db.execute(
+        text("CALL close_expired_tenders()")
+    )
+
+    await db.commit()
+
+    return {
+        "message": "Expired tenders have been closed successfully."
+    }
+
+
+@router.delete(
+    "/{tender_id}",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_roles("admin"))],
+)
+async def delete_tender(
+    tender_id: int,
+    service: TenderService = Depends(get_tender_service),
+) -> dict[str, str]:
+
+    await service.delete_tender(tender_id)
+
+    return {
+        "message": "Tender cancelled successfully."
+    }

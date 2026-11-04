@@ -21,5 +21,9 @@ class EvaluationRepositoryInterface(ABC):
     async def get_all(self, skip:int , limit: int )->list[Evaluation]:
         pass
 
+    @abstractmethod
+    async def get_approved_by_tender(self,tender_id: int, skip: int, limit: int) -> list[Evaluation]:
+        pass
+
 
 

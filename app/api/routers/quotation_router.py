@@ -7,15 +7,15 @@ from fastapi import (
     Depends,
     File,
     Form,
-    HTTPException,
     Query,
     UploadFile,
     status,
 )
-from fastapi.responses import FileResponse
 
 from app.api.dependencies.auth_dependency import require_roles
-from app.api.dependencies.service_dependencies import get_quotation_service
+from app.api.dependencies.service_dependencies import (
+    get_quotation_service,
+)
 
 from app.models.user_model import User
 from app.schemas.quotation_schema import QuotationResponse
@@ -30,7 +30,7 @@ router = APIRouter(
 )
 
 
-# SUBMIT QUOTATION
+# 1. SUBMIT QUOTATION - VENDOR
 
 @router.post(
     "/",
@@ -55,10 +55,12 @@ async def submit_quotation(
     )
 
 
-# GET MY QUOTATIONS
+# 2. GET MY QUOTATIONS - VENDOR
+
 @router.get(
     "/my",
     response_model=list[QuotationResponse],
+    dependencies=[Depends(require_roles("vendor"))],
 )
 async def get_my_quotations(
     page: int = Query(1, ge=1),
@@ -74,7 +76,8 @@ async def get_my_quotations(
     )
 
 
-# ADMIN - GET ALL QUOTATIONS
+# 3. GET ALL QUOTATIONS - ADMIN
+
 @router.get(
     "/",
     response_model=list[QuotationResponse],
@@ -97,7 +100,7 @@ async def get_all_quotations(
     )
 
 
-# GET QUOTATION BY ID
+# 4. GET QUOTATION BY ID - ADMIN / VENDOR
 
 @router.get(
     "/{quotation_id}",
@@ -117,3 +120,33 @@ async def get_quotation(
         role=current_user.role,
     )
 
+
+# 5. WITHDRAW QUOTATION - VENDOR
+
+@router.patch(
+    "/{quotation_id}/withdraw",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_roles("vendor"))],
+)
+async def withdraw_quotation(
+    quotation_id: int,
+    current_vendor: User = Depends(require_roles("vendor")),
+    service: QuotationService = Depends(get_quotation_service),
+) -> dict[str, str]:
+
+    await service.withdraw_quotation(
+        quotation_id=quotation_id,
+        user_id=current_vendor.user_id,
+    )
+
+    logger.info(
+        "Quotation withdrawal endpoint completed. "
+        "quotation_id=%s user_id=%s",
+        quotation_id,
+        current_vendor.user_id,
+    )
+
+    return {
+        "message": "Quotation withdrawn successfully.",
+        "status": "withdrawn",
+    }

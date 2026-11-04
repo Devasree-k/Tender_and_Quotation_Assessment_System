@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -113,3 +113,23 @@ async def get_evaluation(
 ):
 
     return await service.get_evaluation(evaluation_id)
+
+
+# to retrieve the evaluation for particular tender
+@router.get(
+    "/approved/tender/{tender_id}",
+    response_model=list[EvaluationResponse],
+    dependencies=[Depends(require_roles("admin"))],
+)
+async def get_approved_quotations_by_tender(
+    tender_id: int,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    service: EvaluationService = Depends(get_evaluation_service),
+) -> list[EvaluationResponse]:
+
+    return await service.get_approved_quotations_by_tender(
+        tender_id=tender_id,
+        page=page,
+        limit=limit,
+    )

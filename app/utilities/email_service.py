@@ -1,5 +1,7 @@
 
 import asyncio
+from datetime import date
+from decimal import Decimal
 import logging
 import smtplib
 from email.message import EmailMessage
@@ -67,7 +69,8 @@ class EmailService:
 
             Hello Admin,
 
-            A new quotation has been submitted in the Tender and Quotation Assessment System.
+            A new quotation has been submitted in the
+            Tender and Quotation Assessment System.
 
             Quotation Details
             -----------------
@@ -138,6 +141,7 @@ class EmailService:
         self,
         vendor_email: str,
         quotation_id: int,
+        tender_id: int,
         total_score: int,
         decision: str,
         remarks: str | None,
@@ -147,6 +151,7 @@ class EmailService:
             self.send_evaluation_notification,
             vendor_email,
             quotation_id,
+            tender_id,
             total_score,
             decision,
             remarks,
@@ -155,51 +160,95 @@ class EmailService:
 
     # Notification 3: Tender awarded -> Winning vendor
 
-    def send_sanction_notification(
+    def send_award_notification(
         self,
         vendor_email: str,
-        quotation_id: int,
+        vendor_name: str,
+        tender_title: str,
         tender_id: int,
-        sanctioned_amount: str,
+        sanctioned_amount: Decimal,
+        sanction_date: date,
     ) -> bool:
 
-        subject = "Congratulations! Tender Awarded - Tender System"
+        if not EMAIL_SENDER or not EMAIL_PASSWORD:
+            logger.error("Email configuration is missing.")
+            return False
+
+        subject = f"Congratulations! Tender #{tender_id} Awarded"
 
         body = f"""
-            Hello Vendor,
+        Hello {vendor_name},
 
-            Congratulations!
+        Congratulations!
 
-            Your quotation has been selected and the tender
-            has been awarded to your company.
+        Your quotation has been selected and sanctioned.
 
-            Award Details
-            -------------
-            Quotation ID: {quotation_id}
-            Tender ID: {tender_id}
-            Sanctioned Amount: ₹{sanctioned_amount}
+        Tender Details
+        -------------------------
+        Tender ID: {tender_id}
+        Tender Title: {tender_title}
+        Sanctioned Amount: {sanctioned_amount}
+        Sanction Date: {sanction_date.isoformat()}
 
-            Please log in to the system to view the complete
-            sanction details and further instructions.
+        Please log in to the Public Tender and Quotation
+        Assessment System to view your sanction details.
 
-            Regards,
-            Tender and Quotation Assessment System
+        Regards,
+        Public Tender and Quotation Assessment System
         """
 
-        return self.send_email(subject, body, recipient=vendor_email)
+        try:
+            message = EmailMessage()
 
-    async def send_sanction_notification_async(
+            message["Subject"] = subject
+            message["From"] = EMAIL_SENDER
+            message["To"] = vendor_email
+            message["Date"] = formatdate(localtime=True)
+
+            message.set_content(body)
+
+            with smtplib.SMTP_SSL(
+                "smtp.gmail.com",
+                465,
+                timeout=15,
+            ) as smtp:
+
+                smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
+                smtp.send_message(message)
+
+            logger.info(
+                "Award notification email sent. tender_id=%s recipient=%s",
+                tender_id,
+                vendor_email,
+            )
+
+            return True
+
+        except (smtplib.SMTPException, OSError):
+            logger.exception(
+                "Failed to send award notification. tender_id=%s",
+                tender_id,
+            )
+
+            return False
+
+
+    async def send_award_notification_async(
         self,
         vendor_email: str,
-        quotation_id: int,
+        vendor_name: str,
+        tender_title: str,
         tender_id: int,
-        sanctioned_amount: str,
+        sanctioned_amount: Decimal,
+        sanction_date: date,
     ) -> bool:
 
         return await asyncio.to_thread(
-            self.send_sanction_notification,
+            self.send_award_notification,
             vendor_email,
-            quotation_id,
+            vendor_name,
+            tender_title,
             tender_id,
             sanctioned_amount,
+            sanction_date,
         )

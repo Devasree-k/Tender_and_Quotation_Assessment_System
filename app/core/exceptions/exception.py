@@ -45,4 +45,14 @@ class EvaluationAccessDeniedException(Exception):
         self.message = message
         super().__init__(self.message)
 
-        
+
+class SanctionNotFoundException(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
+class SanctionBusinessRuleException(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+    

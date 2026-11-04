@@ -126,14 +126,28 @@ class EvaluationService:
                 .get_vendor_email_by_quotation(quotation_id)
             )
 
+            
             if vendor_email:
-                await self.email_service.send_evaluation_notification_async(
-                    vendor_email=vendor_email,
-                    quotation_id=quotation_id,
-                    total_score=evaluation.total_score,
-                    decision=evaluation.decision,
-                    remarks=evaluation.remarks,
+                email_sent = (
+                    await self.email_service
+                    .send_evaluation_notification_async(
+                        vendor_email=vendor_email,
+                        quotation_id=quotation_id,
+                        tender_id=quotation.tender_id,
+                        total_score=int(evaluation.total_score),
+                        decision=evaluation.decision,
+                        remarks=evaluation.remarks,
+                    )
                 )
+
+                if not email_sent:
+                    logger.warning(
+                        "Evaluation saved successfully, "
+                        "but vendor email notification failed. "
+                        "Quotation ID: %s",
+                        quotation_id,
+                    )
+
 
             return evaluation
 
@@ -182,5 +196,36 @@ class EvaluationService:
     async def get_all_evaluations( self,) -> list[Evaluation]:
         return await self.evaluation_repository.get_all()
 
+    async def get_approved_quotations_by_tender(
+        self,
+        tender_id: int,
+        page: int,
+        limit: int,
+    ) -> list[Evaluation]:
 
-    
+        if page < 1 or limit < 1 or limit > 100:
+            raise EvaluationBusinessRuleException( "Invalid pagination values.")
+
+        tender = await self.tender_repository.get_by_id(tender_id)
+
+        if tender is None:
+            raise TenderNotFoundException(f"Tender with ID {tender_id} not found." )
+
+        skip = (page - 1) * limit
+
+        evaluations = await self.evaluation_repository.get_approved_by_tender(
+            tender_id=tender_id,
+            skip=skip,
+            limit=limit,
+        )
+
+        logger.info(
+            "Retrieved approved evaluations. tender_id=%s count=%s",
+            tender_id,
+            len(evaluations),
+        )
+
+        return evaluations
+
+
+        

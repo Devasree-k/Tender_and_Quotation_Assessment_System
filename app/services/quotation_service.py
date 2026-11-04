@@ -239,9 +239,77 @@ class QuotationService:
     ) -> list[Quotation]:
 
         skip = (page - 1) * limit
-
         return await self.repository.get_all(
             skip,
             limit,
             status,
         )
+
+    
+    async def withdraw_quotation(
+        self,
+        quotation_id: int,
+        user_id: int,
+    ) -> Quotation:
+
+        # Get vendor ID using authenticated user ID
+        vendor_id = await self.repository.get_vendor_id_by_user_id(
+            user_id
+        )
+
+        if vendor_id is None:
+            raise QuotationBusinessRuleException(
+                "Vendor profile not found."
+            )
+
+        # Find quotation
+        quotation = await self.repository.get_by_id(
+            quotation_id
+        )
+
+        if quotation is None:
+            raise QuotationNotFoundException(
+                f"Quotation with ID {quotation_id} not found."
+            )
+
+        # Verify ownership
+        if quotation.vendor_id != vendor_id:
+            raise QuotationAccessDeniedException(
+                "You cannot withdraw another vendor's quotation."
+            )
+
+        # Only submitted quotations can be withdrawn
+        if quotation.status != "submitted":
+            raise QuotationBusinessRuleException(
+                "Only submitted quotations can be withdrawn."
+            )
+
+        try:
+
+            quotation.status = "withdrawn"
+
+            await self.repository.commit()
+
+            logger.info(
+                "Quotation withdrawn successfully. "
+                "quotation_id=%s vendor_id=%s user_id=%s",
+                quotation_id,
+                vendor_id,
+                user_id,
+            )
+
+            return quotation
+
+        except SQLAlchemyError as error:
+
+            await self.repository.rollback()
+
+            logger.exception(
+                "Database error while withdrawing quotation. "
+                "quotation_id=%s",
+                quotation_id,
+            )
+
+            raise QuotationBusinessRuleException(
+                "Unable to withdraw quotation due to a database error."
+            ) from error
