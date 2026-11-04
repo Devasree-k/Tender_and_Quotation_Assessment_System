@@ -10,7 +10,6 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.config import BASE_DIR
 from app.utilities.file_storage import (
     save_quotation_file,
-    delete_quotation_file,
 )
 from app.core.exceptions.exception import (
     TenderNotFoundException,
@@ -26,7 +25,7 @@ from app.repositories.interfaces.quotation_repository_interface import (
 from app.repositories.interfaces.tender_repository_interface import (
     TenderRepositoryInterface,
 )
-
+from app.utilities.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +40,7 @@ class QuotationService:
 
         self.repository = repository
         self.tender_repository = tender_repository
+        self.email_service = EmailService()
 
     async def submit_quotation(
         self,
@@ -122,6 +122,14 @@ class QuotationService:
 
             await self.repository.commit()
 
+            # Added email service 
+            await self.email_service.send_quotation_notification_async(
+                quotation_id=quotation.quotation_id,
+                tender_id=quotation.tender_id,
+                vendor_id=quotation.vendor_id,
+                amount_quoted=str(quotation.amount_quoted),
+            )
+
             logger.info(
                 "Quotation submitted successfully. "
                 "quotation_id=%s tender_id=%s vendor_id=%s",
@@ -140,9 +148,6 @@ class QuotationService:
         except IntegrityError as error:
             await self.repository.rollback()
 
-            if document_path:
-                delete_quotation_file(document_path)
-
             logger.exception(
                 "Database constraint error while submitting quotation. "
                 "tender_id=%s vendor_id=%s",
@@ -156,9 +161,6 @@ class QuotationService:
 
         except SQLAlchemyError as error:
             await self.repository.rollback()
-
-            if document_path:
-                delete_quotation_file(document_path)
 
             logger.exception(
                 "Database error while submitting quotation. tender_id=%s",

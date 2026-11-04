@@ -12,6 +12,8 @@ from app.api.routers.auth_router import router as auth_router
 from app.api.routers.health_router import router as health_router
 from app.api.routers.tender_router import router as tender_router
 from app.api.routers.quotation_router import router as quotation_router
+from app.api.routers.evaluation_router import router as evaluation_router
+
 from app.core.exceptions.exception_handler import register_exception_handlers
 from app.middleware.observability import RequestLoggingMiddleware
 
@@ -23,6 +25,7 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(tender_router)
 app.include_router(quotation_router)
+app.include_router(evaluation_router)
 
 register_exception_handlers(app)
 

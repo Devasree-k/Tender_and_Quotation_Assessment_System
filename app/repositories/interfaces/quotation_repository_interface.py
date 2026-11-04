@@ -4,15 +4,17 @@ from typing import Any
 from app.models.quotation_model import Quotation
 
 class QuotationRepositoryInterface(ABC):
+
+    @abstractmethod
+    async def get_vendor_email_by_quotation(self, quotation_id: int) -> str | None:
+        pass
+
     @abstractmethod
     async def create(self, quotation_data: dict[str, Any],) -> Quotation:
         pass
 
     @abstractmethod 
-    async def get_by_id(
-        self, 
-        quotation_id : int, 
-    )-> Quotation | None:
+    async def get_by_id(self, quotation_id : int )-> Quotation | None:
         pass
 
     @abstractmethod 
@@ -20,7 +22,7 @@ class QuotationRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_by_tender_vendor(self, tender_id: int, vendor_id: int, )-> Quotation | None:
+    async def get_by_tender_vendor(self, tender_id: int, vendor_id: int )-> Quotation | None:
         pass
 
     @abstractmethod

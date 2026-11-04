@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.quotation_model import Quotation
+from app.models.user_model import User
 from app.models.vendor_model import Vendor
 
 from app.repositories.interfaces.quotation_repository_interface import QuotationRepositoryInterface
@@ -12,6 +13,21 @@ from app.repositories.interfaces.quotation_repository_interface import Quotation
 class QuotationRepository(QuotationRepositoryInterface):
     def __init__(self, db:AsyncSession)->None:
         self.db=db
+
+    async def get_vendor_email_by_quotation(self, quotation_id: int,) -> str | None:
+            query = (
+                select(User.email)
+                .join(Vendor, Vendor.user_id == User.user_id)
+                .join(
+                    Quotation,
+                    Quotation.vendor_id == Vendor.vendor_id,
+                )
+                .where(
+                    Quotation.quotation_id == quotation_id,
+                )
+            )
+            result = await self.db.execute(query)
+            return result.scalar_one_or_none()
 
     async def create(self, quotation_data : dict[str, Any],)->Quotation:
         quotation = Quotation(**quotation_data)

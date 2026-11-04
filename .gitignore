@@ -1,26 +1,6 @@
-# .env
-# .venv
-# __pycache__/
-# .pytest_cache/
-
-# logs/
-
-
-# *.log
-# Python cache
-__pycache__/
-*.py[cod]
-
-# Virtual environment
-.venv/
-
-# Pytest
-.pytest_cache/
-
-# Logs
-logs/
-*.log
-
-# Environment variables
 .env
-!.env.example
+.venv
+__pycache__/
+.pytest_cache/
+logs/
+

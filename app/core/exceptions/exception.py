@@ -27,4 +27,22 @@ class QuotationAccessDeniedException(Exception):
         super().__init__(msg)
 
 
+class EvaluationNotFoundException(Exception):
+    def __init__(self, message: str = "Evaluation not found"):
+        self.message = message
+        super().__init__(self.message)
+
+
+class EvaluationBusinessRuleException(Exception):
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
+class EvaluationAccessDeniedException(Exception):
+
+    def __init__(self, message: str = "Access denied"):
+        self.message = message
+        super().__init__(self.message)
+
         

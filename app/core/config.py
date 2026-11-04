@@ -29,3 +29,8 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 LOG_DIR = BASE_DIR / os.getenv("LOG_DIR", "logs")
 
 
+EMAIL_SENDER: str = os.getenv("EMAIL_SENDER", "")
+EMAIL_PASSWORD: str = os.getenv("EMAIL_PASSWORD", "")
+ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "")
+
+

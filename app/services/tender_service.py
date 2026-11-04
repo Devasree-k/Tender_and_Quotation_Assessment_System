@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class TenderService:
 
     ALLOWED_STATUS_TRANSITIONS: dict[str, set[str]] = {
-        "open": {"closed", "cancelled"},
+        "open": {"closed", "cancelled","under_evaluation"},
         "closed": {"under_evaluation", "cancelled"},
         "under_evaluation": {"assigned", "closed", "cancelled"},
         "assigned": set(),
@@ -156,27 +156,17 @@ class TenderService:
 
         tender = await self.get_tender(tender_id)
         if tender.status != "open":
-            raise TenderBusinessRuleException(
-                "Only open tenders can be edited."
-            )
-        data: dict[str, Any] = update_data.model_dump(
-            exclude_unset=True
-        )
+            raise TenderBusinessRuleException("Only open tenders can be edited.")
+        
+        data: dict[str, Any] = update_data.model_dump(exclude_unset=True)
 
         if not data:
             raise TenderBusinessRuleException(
                 "At least one field must be provided."
             )
 
-        publish_date: date = data.get(
-            "publish_date",
-            tender.publish_date,
-        )
-
-        end_date: date = data.get(
-            "end_date",
-            tender.end_date,
-        )
+        publish_date: date = data.get( "publish_date", tender.publish_date)
+        end_date: date = data.get("end_date",tender.end_date)
 
         self.validate_dates(publish_date, end_date)
 
@@ -201,8 +191,7 @@ class TenderService:
         except IntegrityError as error:
             await self.repository.rollback()
             logger.exception(
-                "Database constraint error while updating tender. "
-                "tender_id=%s",
+                "Database constraint error while updating tender. tender_id=%s",
                 tender_id,
             )
 
@@ -239,24 +228,21 @@ class TenderService:
 
         if new_status not in allowed_statuses:
             logger.warning(
-                "Invalid tender status transition. tender_id=%s "
-                "current_status=%s requested_status=%s",
+                "Invalid tender status transition. tender_id=%s current_status=%s requested_status=%s",
                 tender_id,
                 current_status,
                 new_status,
             )
 
             raise InvalidTenderStatusException(
-                f"Cannot change tender status from "
-                f"'{current_status}' to '{new_status}'."
+                f"Cannot change tender status from '{current_status}' to '{new_status}'."
             )
 
-        if new_status == "under_evaluation":
-            if tender.end_date >= date.today():
-                raise TenderBusinessRuleException(
-                    "Tender cannot enter evaluation before its "
-                    "closing date has passed."
-                )
+        # if new_status == "under_evaluation":
+        #     if tender.end_date >= date.today():
+        #         raise TenderBusinessRuleException(
+        #             "Tender cannot enter evaluation before its closing date has passed."
+        #         )
 
         try:
             updated_tender = await self.repository.update(
@@ -267,8 +253,7 @@ class TenderService:
             await self.repository.commit()
 
             logger.info(
-                "Tender status changed. tender_id=%s "
-                "old_status=%s new_status=%s",
+                "Tender status changed. tender_id=%s old_status=%s new_status=%s",
                 tender_id,
                 current_status,
                 new_status,
@@ -280,8 +265,7 @@ class TenderService:
             await self.repository.rollback()
 
             logger.exception(
-                "Database constraint error while changing tender status. "
-                "tender_id=%s",
+                "Database constraint error while changing tender status. tender_id=%s",
                 tender_id,
             )
 
@@ -293,8 +277,7 @@ class TenderService:
             await self.repository.rollback()
 
             logger.exception(
-                "Database error while changing tender status. "
-                "tender_id=%s",
+                "Database error while changing tender status. tender_id=%s",
                 tender_id,
             )
 
