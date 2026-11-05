@@ -23,7 +23,7 @@ router = APIRouter(
 )
 
 
-# ---------------- REGISTER ----------------
+# REGISTER
 
 @router.post(
     "/register",
@@ -43,7 +43,7 @@ async def register(
     )
 
 
-# ---------------- LOGIN ----------------
+#  LOGIN 
 
 @router.post(
     "/login",
@@ -65,7 +65,7 @@ async def login(
     )
 
 
-# ---------------- REFRESH TOKEN ----------------
+# REFRESH TOKEN 
 
 @router.post(
     "/refresh",
@@ -83,7 +83,7 @@ async def refresh_token(
     )
 
 
-# ---------------- LOGOUT ----------------
+# LOGOUT
 
 @router.post("/logout")
 async def logout(
