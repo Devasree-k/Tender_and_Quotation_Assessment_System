@@ -3,7 +3,6 @@ uvicorn[standard]
 sqlalchemy
 asyncpg
 pydantic-settings
-alembic 
 pydantic>=2.0
 PyJWT
 pwdlib[argon2]
@@ -12,8 +11,12 @@ sqlalchemy[asyncio]
 alembic
 python-dotenv
 aiofiles
+email-validator
 
 pytest
 pytest-asyncio
 httpx
+aiosqlite
+
+ruff
 

@@ -9,4 +9,29 @@ It maintains structured records of users, vendors, tenders, quotations, and eval
 
 The application also includes automated testing using Pytest to validate business logic, database operations, and API endpoints.
 
+## Main Features 
+
+
+## Technology 
+
+
+## Pre requistes 
+
+
+## setup and installation
+
+
+## API documnetation
+
+
+## API modules
+
+
+ ## running tests
+
+
+ ## Development notes
+
+ 
+
 

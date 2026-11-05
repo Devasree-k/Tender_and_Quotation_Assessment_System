@@ -9,7 +9,6 @@ from app.repositories.interfaces.tender_repository_interface import (
     TenderRepositoryInterface,
 )
 
-
 class TenderRepository(TenderRepositoryInterface):
 
     def __init__(self, db: AsyncSession) -> None:
@@ -17,19 +16,15 @@ class TenderRepository(TenderRepositoryInterface):
 
     async def create(self, tender_data: dict[str, Any]) -> Tender:
         tender = Tender(**tender_data)
-
         self.db.add(tender)
         await self.db.flush()
-
         return tender
 
     async def get_by_id(self, tender_id: int) -> Tender | None:
         query = select(Tender).where(
             Tender.tender_id == tender_id
         )
-
         result = await self.db.execute(query)
-
         return result.scalar_one_or_none()
 
     async def get_all(
@@ -56,7 +51,6 @@ class TenderRepository(TenderRepositoryInterface):
         )
 
         result = await self.db.execute(query)
-
         return list(result.scalars().all())
 
     async def get_open_tenders(
@@ -80,7 +74,6 @@ class TenderRepository(TenderRepositoryInterface):
         )
 
         result = await self.db.execute(query)
-
         return list(result.scalars().all())
 
     async def update(
@@ -93,7 +86,6 @@ class TenderRepository(TenderRepositoryInterface):
             setattr(tender, key, value)
 
         await self.db.flush()
-
         return tender
 
     async def commit(self) -> None:

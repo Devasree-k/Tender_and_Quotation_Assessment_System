@@ -40,10 +40,8 @@ class EvaluationBusinessRuleException(Exception):
 
 
 class EvaluationAccessDeniedException(Exception):
-
-    def __init__(self, message: str = "Access denied"):
-        self.message = message
-        super().__init__(self.message)
+    def __init__(self, msg):
+        super().__init__(msg)
 
 
 class SanctionNotFoundException(Exception):

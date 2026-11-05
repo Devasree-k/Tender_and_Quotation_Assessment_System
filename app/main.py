@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 
 from fastapi import FastAPI
-from sqlalchemy import engine
+from app.database.connection import engine
 
 from app.core.logging_config import configure_logging
 

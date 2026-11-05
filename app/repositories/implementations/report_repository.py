@@ -23,12 +23,8 @@ class ReportRepository(ReportRepositoryInterface):
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    # -------------------------------------------------
     # REPORT 1: DASHBOARD SUMMARY
-    # -------------------------------------------------
-
     async def get_dashboard_report(self) -> dict[str, Any]:
-
         try:
             tender_count = await self.db.scalar(
                 select(func.count(Tender.tender_id))
@@ -98,14 +94,8 @@ class ReportRepository(ReportRepositoryInterface):
             logger.exception("Failed to generate dashboard report")
             raise
 
-    # -------------------------------------------------
     # REPORT 2: TENDER-WISE QUOTATION REPORT
-    # -------------------------------------------------
-
-    async def get_tender_report(
-        self,
-        tender_id: int | None = None,
-    ) -> list[dict[str, Any]]:
+    async def get_tender_report(self, tender_id: int | None = None) -> list[dict[str, Any]]:
 
         try:
             query = (
@@ -162,9 +152,7 @@ class ReportRepository(ReportRepositoryInterface):
             )
 
             if tender_id is not None:
-                query = query.where(
-                    Tender.tender_id == tender_id
-                )
+                query = query.where(Tender.tender_id == tender_id)
 
             query = query.group_by(
                 Tender.tender_id,
@@ -186,14 +174,8 @@ class ReportRepository(ReportRepositoryInterface):
             )
             raise
 
-    # -------------------------------------------------
     # REPORT 3: EVALUATION REPORT
-    # -------------------------------------------------
-
-    async def get_evaluation_report(
-        self,
-        decision: str | None = None,
-    ) -> list[dict[str, Any]]:
+    async def get_evaluation_report(self, decision: str | None = None) -> list[dict[str, Any]]:
 
         try:
             query = (
@@ -224,35 +206,21 @@ class ReportRepository(ReportRepositoryInterface):
             )
 
             if decision is not None:
-                query = query.where(
-                    Evaluation.decision == decision
-                )
+                query = query.where(Evaluation.decision == decision)
 
-            query = query.order_by(
-                Evaluation.evaluation_id.desc()
-            )
-
+            query = query.order_by(Evaluation.evaluation_id.desc())
             result = await self.db.execute(query)
-
             return [
                 dict(row)
                 for row in result.mappings().all()
             ]
 
         except Exception:
-            logger.exception(
-                "Failed to generate evaluation report"
-            )
+            logger.exception("Failed to generate evaluation report")
             raise
 
-    # -------------------------------------------------
     # REPORT 4: SANCTION / AWARD REPORT
-    # -------------------------------------------------
-
-    async def get_sanction_report(
-        self,
-        tender_id: int | None = None,
-    ) -> list[dict[str, Any]]:
+    async def get_sanction_report(self,tender_id: int | None = None) -> list[dict[str, Any]]:
 
         try:
             query = (
@@ -296,16 +264,10 @@ class ReportRepository(ReportRepositoryInterface):
             )
 
             if tender_id is not None:
-                query = query.where(
-                    Sanction.tender_id == tender_id
-                )
+                query = query.where(Sanction.tender_id == tender_id)
 
-            query = query.order_by(
-                Sanction.sanctioned_date.desc()
-            )
-
+            query = query.order_by(Sanction.sanctioned_date.desc())
             result = await self.db.execute(query)
-
             return [
                 dict(row)
                 for row in result.mappings().all()
@@ -317,3 +279,4 @@ class ReportRepository(ReportRepositoryInterface):
                 tender_id,
             )
             raise
+

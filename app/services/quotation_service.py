@@ -69,7 +69,7 @@ class QuotationService:
 
         if tender.status != "open":
             raise QuotationBusinessRuleException(
-                "This tender is not accepting quotations."
+                "This tender is not accepting quotations as it is not open now."
             )
 
         if tender.publish_date > today:

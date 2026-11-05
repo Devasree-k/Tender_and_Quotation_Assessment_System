@@ -1,9 +1,11 @@
+
 from decimal import Decimal
 from unittest.mock import AsyncMock
 
 import pytest
 
 from app.services.evaluation_service import EvaluationService
+
 from app.schemas.evaluation_schema import EvaluationCreate
 
 from app.core.exceptions.exception import EvaluationBusinessRuleException
@@ -13,6 +15,7 @@ from app.core.exceptions.exception import EvaluationBusinessRuleException
 def service():
 
     db = AsyncMock()
+
     service = EvaluationService(db)
 
     service.quotation_repository = AsyncMock()
@@ -38,25 +41,30 @@ def evaluation_data():
 @pytest.fixture
 def quotation():
 
-    class QuotationObject:
+    class FakeQuotation:
+
         quotation_id = 1
         tender_id = 10
         vendor_id = 5
         status = "submitted"
 
-    return QuotationObject()
+    return FakeQuotation()
 
 
 @pytest.fixture
 def tender():
 
-    class TenderObject:
+    class FakeTender:
+
         tender_id = 10
         status = "closed"
 
-    return TenderObject()
+    return FakeTender()
 
 
+# 1. SUCCESSFUL EVALUATION
+
+@pytest.mark.asyncio
 async def test_create_evaluation_success(
     service,
     evaluation_data,
@@ -89,7 +97,10 @@ async def test_create_evaluation_success(
     service.db.commit.assert_awaited_once()
 
 
-async def test_evaluation_for_ineligible_vendor_rejected(
+# 2. INELIGIBLE VENDOR
+
+@pytest.mark.asyncio
+async def test_ineligible_vendor_rejected(
     service,
     quotation,
     tender,
@@ -118,6 +129,9 @@ async def test_evaluation_for_ineligible_vendor_rejected(
         )
 
 
+# 3. DUPLICATE EVALUATION
+
+@pytest.mark.asyncio
 async def test_duplicate_evaluation(
     service,
     evaluation_data,
@@ -140,19 +154,25 @@ async def test_duplicate_evaluation(
         )
 
 
-async def test_tender_must_be_closed_or_under_evaluation(
+# 4. INVALID TENDER STATUS
+
+@pytest.mark.asyncio
+async def test_open_tender_evaluation_rejected(
     service,
     evaluation_data,
     quotation,
 ):
 
-    service.quotation_repository.get_by_id.return_value = quotation
-
     class OpenTender:
+
         tender_id = 10
         status = "open"
 
+    service.quotation_repository.get_by_id.return_value = quotation
+
     service.tender_repository.get_by_id.return_value = OpenTender()
+
+    service.evaluation_repository.get_by_quotation_id.return_value = None
 
     with pytest.raises(EvaluationBusinessRuleException):
 
@@ -163,7 +183,13 @@ async def test_tender_must_be_closed_or_under_evaluation(
         )
 
 
-async def test_quotation_not_found( service, evaluation_data):
+# 5. QUOTATION NOT FOUND
+
+@pytest.mark.asyncio
+async def test_quotation_not_found(
+    service,
+    evaluation_data,
+):
 
     service.quotation_repository.get_by_id.return_value = None
 
@@ -174,4 +200,3 @@ async def test_quotation_not_found( service, evaluation_data):
             evaluation_data=evaluation_data,
             admin_id=100,
         )
-
