@@ -53,12 +53,9 @@ def quotation():
 
 @pytest.fixture
 def tender():
-
     class FakeTender:
-
         tender_id = 10
         status = "closed"
-
     return FakeTender()
 
 
@@ -73,11 +70,8 @@ async def test_create_evaluation_success(
 ):
 
     service.quotation_repository.get_by_id.return_value = quotation
-
     service.tender_repository.get_by_id.return_value = tender
-
     service.evaluation_repository.get_by_quotation_id.return_value = None
-
     service.evaluation_repository.create.side_effect = (
         lambda evaluation: evaluation
     )
@@ -89,11 +83,8 @@ async def test_create_evaluation_success(
     )
 
     assert result.total_score == Decimal("87")
-
     assert result.evaluated_by == 100
-
     assert quotation.status == "approved"
-
     service.db.commit.assert_awaited_once()
 
 
@@ -107,9 +98,7 @@ async def test_ineligible_vendor_rejected(
 ):
 
     service.quotation_repository.get_by_id.return_value = quotation
-
     service.tender_repository.get_by_id.return_value = tender
-
     service.evaluation_repository.get_by_quotation_id.return_value = None
 
     data = EvaluationCreate(
@@ -140,9 +129,7 @@ async def test_duplicate_evaluation(
 ):
 
     service.quotation_repository.get_by_id.return_value = quotation
-
     service.tender_repository.get_by_id.return_value = tender
-
     service.evaluation_repository.get_by_quotation_id.return_value = object()
 
     with pytest.raises(EvaluationBusinessRuleException):
@@ -169,9 +156,7 @@ async def test_open_tender_evaluation_rejected(
         status = "open"
 
     service.quotation_repository.get_by_id.return_value = quotation
-
     service.tender_repository.get_by_id.return_value = OpenTender()
-
     service.evaluation_repository.get_by_quotation_id.return_value = None
 
     with pytest.raises(EvaluationBusinessRuleException):
@@ -200,3 +185,4 @@ async def test_quotation_not_found(
             evaluation_data=evaluation_data,
             admin_id=100,
         )
+

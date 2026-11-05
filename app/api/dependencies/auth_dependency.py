@@ -1,6 +1,7 @@
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+# from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.database import get_db
@@ -8,11 +9,14 @@ from app.core.security import decode_token
 from app.models.user_model import User
 from app.repositories.implementations.user_repository import UserRepository
 
-bearer_scheme = HTTPBearer()
-
+# bearer_scheme = HTTPBearer()
+auth_scheme = OAuth2PasswordBearer(
+    tokenUrl="/api/auth/login"
+)
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    # credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    token = Depends(auth_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
 
@@ -22,7 +26,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    token = credentials.credentials
+    # token = token.credentials
 
     try:
 

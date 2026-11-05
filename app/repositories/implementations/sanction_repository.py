@@ -38,26 +38,14 @@ class SanctionRepository(SanctionRepositoryInterface):
         self,
         sanction_id: int,
     ) -> Sanction | None:
-
-        query = select(Sanction).where(
-            Sanction.sanction_id == sanction_id
-        )
-
+        query = select(Sanction).where(Sanction.sanction_id == sanction_id)
         result = await self.db.execute(query)
-
         return result.scalar_one_or_none()
 
-    async def get_by_tender(
-        self,
-        tender_id: int,
-    ) -> Sanction | None:
 
-        query = select(Sanction).where(
-            Sanction.tender_id == tender_id
-        )
-
+    async def get_by_tender(self, tender_id: int,) -> Sanction | None:
+        query = select(Sanction).where(Sanction.tender_id == tender_id)
         result = await self.db.execute(query)
-
         return result.scalar_one_or_none()
 
     async def get_all(
@@ -74,8 +62,8 @@ class SanctionRepository(SanctionRepositoryInterface):
         )
 
         result = await self.db.execute(query)
-
         return list(result.scalars().all())
+
 
     async def get_quotation_details(
         self,
@@ -97,8 +85,8 @@ class SanctionRepository(SanctionRepositoryInterface):
         )
 
         result = await self.db.execute(query)
-
         return result.scalar_one_or_none()
+
 
     async def update_tender_status(
         self,
@@ -111,9 +99,7 @@ class SanctionRepository(SanctionRepositoryInterface):
             .where(Tender.tender_id == tender_id)
             .values(status=new_status)
         )
-
         await self.db.execute(query)
-
         await self.db.flush()
 
     async def commit(self) -> None:
@@ -121,3 +107,4 @@ class SanctionRepository(SanctionRepositoryInterface):
 
     async def rollback(self) -> None:
         await self.db.rollback()
+

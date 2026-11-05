@@ -1,33 +1,24 @@
 import logging
 from datetime import date
 from decimal import Decimal
-
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.core.exceptions.exception import (
     SanctionNotFoundException,
     SanctionBusinessRuleException,
 )
-
 from app.models.sanction_model import Sanction
 
-from app.repositories.interfaces.sanction_repository_interface import (
-    SanctionRepositoryInterface,
-)
+from app.repositories.interfaces.sanction_repository_interface import SanctionRepositoryInterface
 
 from app.utilities.email_service import EmailService
 
 
 logger = logging.getLogger(__name__)
 
-
 class SanctionService:
 
-    def __init__(
-        self,
-        repository: SanctionRepositoryInterface,
-        email_service: EmailService,
-    ) -> None:
+    def __init__(self,repository: SanctionRepositoryInterface,email_service: EmailService) -> None:
 
         self.repository = repository
         self.email_service = email_service
@@ -39,10 +30,7 @@ class SanctionService:
         admin_id: int,
     ) -> Sanction:
 
-        quotation = await self.repository.get_quotation_details(
-            quotation_id
-        )
-
+        quotation = await self.repository.get_quotation_details( quotation_id)
         if quotation is None:
             raise SanctionNotFoundException(
                 f"Quotation with ID {quotation_id} not found."
@@ -138,12 +126,9 @@ class SanctionService:
                     "quotation_id=%s",
                     quotation_id,
                 )
-            
 
         except IntegrityError as error:
-
             await self.repository.rollback()
-
             logger.exception(
                 "Constraint violation while sanctioning tender. "
                 "quotation_id=%s",
@@ -155,51 +140,34 @@ class SanctionService:
             ) from error
 
         except SQLAlchemyError as error:
-
             await self.repository.rollback()
-
             logger.exception(
                 "Database error while sanctioning quotation_id=%s",
                 quotation_id,
             )
-
             raise SanctionBusinessRuleException(
                 "A database error occurred while creating the sanction."
             ) from error
-
         
         return sanction
 
-    async def get_sanction(
-        self,
-        sanction_id: int,
-    ) -> Sanction:
+    async def get_sanction(self, sanction_id: int) -> Sanction:
 
-        sanction = await self.repository.get_by_id(
-            sanction_id
-        )
-
+        sanction = await self.repository.get_by_id( sanction_id)
         if sanction is None:
             raise SanctionNotFoundException(
                 f"Sanction with ID {sanction_id} not found."
             )
-
         return sanction
 
-    async def get_sanction_by_tender(
-        self,
-        tender_id: int,
-    ) -> Sanction:
+    async def get_sanction_by_tender(self, tender_id: int) -> Sanction:
 
-        sanction = await self.repository.get_by_tender(
-            tender_id
-        )
+        sanction = await self.repository.get_by_tender( tender_id)
 
         if sanction is None:
             raise SanctionNotFoundException(
                 f"No sanction found for tender ID {tender_id}."
             )
-
         return sanction
 
     async def get_all_sanctions(
@@ -209,8 +177,6 @@ class SanctionService:
     ) -> list[Sanction]:
 
         skip = (page - 1) * limit
+        return await self.repository.get_all(skip, limit)
 
-        return await self.repository.get_all(
-            skip,
-            limit,
-        )
+    

@@ -1,4 +1,5 @@
 
+-- Trigger
 
 CREATE FUNCTION reject_quotations_after_sanction()
 RETURNS TRIGGER

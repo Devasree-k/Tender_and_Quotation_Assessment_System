@@ -140,7 +140,7 @@ async def change_tender_status(
     )
 
 
-
+# Used stored procedures to close the expired tenders.
 @router.patch(
     "/close-expired",
     dependencies=[Depends(require_roles("admin"))],
@@ -153,9 +153,7 @@ async def close_expired_tenders(
     await db.execute(
         text("CALL close_expired_tenders()")
     )
-
     await db.commit()
-
     return {
         "message": "Expired tenders have been closed successfully."
     }
@@ -172,7 +170,8 @@ async def delete_tender(
 ) -> dict[str, str]:
 
     await service.delete_tender(tender_id)
-
     return {
         "message": "Tender cancelled successfully."
     }
+
+

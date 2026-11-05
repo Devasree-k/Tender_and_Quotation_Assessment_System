@@ -27,11 +27,10 @@ logger = logging.getLogger(__name__)
 class AuthService:
 
     def __init__(self, db: AsyncSession):
-
         self.db = db
         self.repository = UserRepository(db)
 
-    # ---------------- REGISTER ----------------
+    # REGISTER 
 
     async def register(
         self,
@@ -97,13 +96,8 @@ class AuthService:
 
             raise
 
-    # ---------------- LOGIN ----------------
-
-    async def login(
-        self,
-        username: str,
-        password: str
-    ) -> dict[str, str]:
+    #LOGIN 
+    async def login(self, username: str, password: str) -> dict[str, str]:
 
         user = await self.repository.get_by_username(username)
 
@@ -119,16 +113,11 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"}
             )
 
-        if not verify_password(
-            password,
-            user.hashed_password
-        ):
-
+        if not verify_password(password, user.hashed_password):
             logger.warning(
                 "Login failed: incorrect password for user_id=%s",
                 user.user_id
             )
-
             raise HTTPException(
                 status_code=401,
                 detail="Invalid username or password",
@@ -136,19 +125,13 @@ class AuthService:
             )
 
         if not user.is_active:
-
             raise HTTPException(
                 status_code=403,
                 detail="Account is inactive"
             )
 
-        access_token = create_access_token(
-            user.user_id,
-            user.role
-        )
-
+        access_token = create_access_token(user.user_id,user.role)
         refresh_token = create_refresh_token()
-
         self.db.add(
             RefreshToken(
                 user_id=user.user_id,
@@ -172,7 +155,7 @@ class AuthService:
             "token_type": "bearer"
         }
 
-    # ---------------- REFRESH TOKEN ----------------
+    # REFRESH TOKEN 
 
     async def refresh(
         self,
@@ -249,10 +232,9 @@ class AuthService:
             "token_type": "bearer"
         }
 
-    # ---------------- LOGOUT ----------------
+    # LOGOUT
 
     async def logout(self, refresh_token: str) -> None:
-
         record = await self.db.scalar(
             select(RefreshToken).where(
                 RefreshToken.token_hash ==
@@ -261,27 +243,18 @@ class AuthService:
         )
 
         if record and not record.revoked:
-
             record.revoked = True
-
             await self.db.commit()
-
             logger.info(
                 "User logged out: user_id=%s",
                 record.user_id
             )
 
-    # ---------------- USER PROFILE ----------------
+    #  USER PROFILE
 
-    async def get_user_profile(
-        self,
-        user_id: int
-    ) -> User:
-
+    async def get_user_profile(self,user_id: int) -> User:
         user = await self.repository.get_by_id(user_id)
-
         if not user or not user.is_active:
-
             raise HTTPException(
                 status_code=401,
                 detail="User not found or inactive"

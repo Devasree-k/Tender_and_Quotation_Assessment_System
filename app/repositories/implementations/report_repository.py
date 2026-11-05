@@ -23,7 +23,7 @@ class ReportRepository(ReportRepositoryInterface):
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    # REPORT 1: DASHBOARD SUMMARY
+    # DASHBOARD SUMMARY
     async def get_dashboard_report(self) -> dict[str, Any]:
         try:
             tender_count = await self.db.scalar(
@@ -94,7 +94,7 @@ class ReportRepository(ReportRepositoryInterface):
             logger.exception("Failed to generate dashboard report")
             raise
 
-    # REPORT 2: TENDER-WISE QUOTATION REPORT
+    # TENDER-WISE QUOTATION REPORT
     async def get_tender_report(self, tender_id: int | None = None) -> list[dict[str, Any]]:
 
         try:
@@ -105,31 +105,23 @@ class ReportRepository(ReportRepositoryInterface):
                     Tender.status.label("tender_status"),
 
                     func.count(
-                        case(
-                            (
-                                Quotation.status != "withdrawn",
-                                Quotation.quotation_id,
-                            )
-                        )
+                        case((Quotation.status != "withdrawn",
+                            Quotation.quotation_id,
+                        ))
                     ).label("total_quotations"),
 
-                    func.count(
-                        case(
-                            (
+                    func.count(case((
                                 Quotation.status == "withdrawn",
                                 Quotation.quotation_id,
                             )
                         )
                     ).label("withdrawn_quotations"),
 
-                    func.coalesce(
-                        func.sum(
-                            case(
-                                (
+                    func.coalesce(func.sum(
+                            case((
                                     Quotation.status != "withdrawn",
                                     Quotation.amount_quoted,
-                                ),
-                                else_=0,
+                                ),else_=0,
                             )
                         ),
                         0,
@@ -174,27 +166,23 @@ class ReportRepository(ReportRepositoryInterface):
             )
             raise
 
-    # REPORT 3: EVALUATION REPORT
+    # EVALUATION REPORT
     async def get_evaluation_report(self, decision: str | None = None) -> list[dict[str, Any]]:
-
         try:
             query = (
                 select(
                     Tender.tender_id,
                     Tender.tender_title,
-
                     Evaluation.evaluation_id,
                     Evaluation.decision,
                     Evaluation.total_score,
-
                     Quotation.quotation_id,
                     Quotation.amount_quoted,
                     Quotation.status.label("quotation_status"),
                 )
                 .join(
                     Quotation,
-                    Quotation.quotation_id
-                    == Evaluation.quotation_id,
+                    Quotation.quotation_id == Evaluation.quotation_id,
                 )
                 .join(
                     Tender,
@@ -219,7 +207,7 @@ class ReportRepository(ReportRepositoryInterface):
             logger.exception("Failed to generate evaluation report")
             raise
 
-    # REPORT 4: SANCTION / AWARD REPORT
+    # SANCTION / AWARD REPORT
     async def get_sanction_report(self,tender_id: int | None = None) -> list[dict[str, Any]]:
 
         try:
@@ -228,17 +216,12 @@ class ReportRepository(ReportRepositoryInterface):
                     Sanction.sanction_id,
                     Sanction.tender_id,
                     Sanction.quotation_id,
-
                     Tender.tender_title,
-
                     Vendor.vendor_id,
                     Vendor.company_name,
                     Vendor.owner_name,
-
                     User.email.label("vendor_email"),
-
                     Quotation.amount_quoted,
-
                     Sanction.sanctioned_amount,
                     Sanction.sanctioned_date,
                     Sanction.sanctioned_by,
@@ -250,8 +233,7 @@ class ReportRepository(ReportRepositoryInterface):
                 )
                 .join(
                     Quotation,
-                    Quotation.quotation_id
-                    == Sanction.quotation_id,
+                    Quotation.quotation_id == Sanction.quotation_id,
                 )
                 .join(
                     Vendor,

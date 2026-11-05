@@ -14,7 +14,6 @@ class EvaluationRepository(EvaluationRepositoryInterface):
         self.db = db
 
     async def create(self, evaluation_data: Evaluation) -> Evaluation :
-
         self.db.add(evaluation_data)
         await self.db.flush()
     
@@ -49,7 +48,6 @@ class EvaluationRepository(EvaluationRepositoryInterface):
 
 
     # to retrieve approved evaluation for specific tender 
-
     async def get_approved_by_tender(
         self,
         tender_id: int,
@@ -74,7 +72,6 @@ class EvaluationRepository(EvaluationRepositoryInterface):
             .offset(skip)
             .limit(limit)
         )
-
         result = await self.db.execute(query)
-
         return list(result.scalars().all())
+    

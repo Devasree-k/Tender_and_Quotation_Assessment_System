@@ -35,7 +35,7 @@ async def test_quotation_evaluation_workflow(
         == "approved"
     )
 
-    assert created_evaluation["total_score"] == 87
+    assert float(created_evaluation["total_score"]) == 87.0
 
 
 # 3. EVALUATION, SANCTION AND REPORT WORKFLOW

@@ -8,9 +8,11 @@ import pytest
 import pytest_asyncio
 
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import update
 
 from app.api.dependencies.database import get_db
 from app.main import app
+from app.models.tender_model import Tender
 from app.models.user_model import User
 
 from app.core.security import hash_password
@@ -22,6 +24,9 @@ from tests.test_database import (
     create_test_tables,
     drop_test_tables,
 )
+
+from io import BytesIO
+from reportlab.pdfgen import canvas
 
 # DATABASE FIXTURE
 
@@ -182,9 +187,7 @@ def sample_sanction_data():
     }
 
 
-# =========================================================
 # MOCK REPOSITORY FIXTURES
-# =========================================================
 
 @pytest.fixture
 def mock_tender_repository():
@@ -299,3 +302,145 @@ def fake_sanction():
 def mock_email_service():
     return AsyncMock()
 
+
+# Reusable fixtures
+@pytest_asyncio.fixture
+async def created_tender(
+    client,
+    admin_headers,
+    sample_tender_data,
+):
+
+    response = await client.post(
+        "/api/tenders/",
+        headers=admin_headers,
+        json=sample_tender_data,
+    )
+
+    assert response.status_code == 201, response.text
+
+    return response.json()
+
+
+def create_test_pdf():
+    pdf_file = BytesIO()
+
+    pdf = canvas.Canvas(pdf_file)
+
+    pdf.drawString(100, 750, "Test Quotation Document")
+    pdf.drawString(100, 720, "Vendor: Test Construction")
+    pdf.drawString(100, 690, "Tender: Test Road Maintenance")
+    pdf.drawString(100, 660, "Quoted Amount: 450000")
+
+    pdf.save()
+
+    pdf_file.seek(0)
+
+    return pdf_file
+
+@pytest_asyncio.fixture
+async def created_quotation(
+    client,
+    created_tender,
+    vendor_headers,
+):
+    pdf_file = create_test_pdf()
+
+    response = await client.post(
+        "/api/quotations/",
+        headers=vendor_headers,
+        data={
+            "tender_id": str(created_tender["tender_id"]),
+            "amount_quoted": "450000.00",
+            "proposal": "We can complete this project successfully.",
+        },
+        files={
+            "document": (
+                "proposal.pdf",
+                pdf_file,
+                "application/pdf",
+            )
+        },
+    )
+
+    assert response.status_code == 201, response.text
+
+    return response.json()
+
+
+@pytest_asyncio.fixture
+async def created_evaluation(
+    client,
+    admin_headers,
+    created_tender,
+    created_quotation,
+    sample_evaluation_data,
+):
+
+    tender_id = created_tender["tender_id"]
+    quotation_id = created_quotation["quotation_id"]
+
+    # Close the tender before evaluation
+    status_response = await client.patch(
+        f"/api/tenders/{tender_id}/status",
+        headers=admin_headers,
+        json={"status": "closed"},
+    )
+
+    assert status_response.status_code == 200, status_response.text
+
+    response = await client.post(
+        f"/api/evaluations/{quotation_id}",
+        headers=admin_headers,
+        json=sample_evaluation_data,
+    )
+
+    assert response.status_code == 201, response.text
+
+    return response.json()
+
+
+
+
+@pytest_asyncio.fixture
+async def created_sanction(
+    client,
+    admin_headers,
+    test_db,
+    created_evaluation,
+    created_quotation,
+):
+    tender_id = created_quotation["tender_id"]
+
+    # Move both tender dates into the past.
+    await test_db.execute(
+        update(Tender)
+        .where(Tender.tender_id == tender_id)
+        .values(
+            publish_date=date.today() - timedelta(days=10),
+            end_date=date.today() - timedelta(days=1),
+        )
+    )
+    await test_db.commit()
+
+    # Move tender into evaluation status.
+    response = await client.patch(
+        f"/api/tenders/{tender_id}/status",
+        headers=admin_headers,
+        json={"status": "under_evaluation"},
+    )
+
+    assert response.status_code == 200, response.text
+
+    # Create sanction.
+    response = await client.post(
+        "/api/sanctions/",
+        headers=admin_headers,
+        json={
+            "quotation_id": created_quotation["quotation_id"],
+            "amount": 450000,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    return response.json()
